@@ -1,0 +1,570 @@
+from datetime import datetime
+import os
+import glob 
+import base64
+import hashlib
+import hmac
+import requests
+import time
+import uuid
+from urllib import parse
+import pandas as pd
+import http.client
+import json
+from pydub import AudioSegment
+from pydub.silence import split_on_silence
+import threading
+import you_get
+import numpy as np
+import subprocess
+import zipfile
+import shutil
+
+'''多人多链接
+   将压缩包移动到指定文件夹，如果之前文件夹有重名，处理方式
+   b站如果是一个列表应该怎么下载，或者备注
+   多参数问题
+'''
+'''
+全局变量声明
+'''
+default_silence=630
+default_thresh=-30
+
+#改后缀的地方
+hzcontent='（素材分享群：123593137，获取更多素材）.mp3'
+       
+
+rootpath='C:\\Users\\Administrator\\Desktop\\test2\\'
+chunkspath=rootpath+'chunks\\'
+wavpath=rootpath+'转wav\\'
+logpath=rootpath+'日志\\'
+txtpath='C:\\Users\\Administrator\\Desktop\\下载链接.txt'
+
+data2=pd.DataFrame(data=None,columns=['编号','语音内容'])
+
+ziptofile='E:\\test2\\新版语音包纯净版本\\'
+ziptofile_hz='E:\\test2\\新版语音包带后缀版本\\'
+if not os.path.exists(ziptofile):os.mkdir(ziptofile)
+if not os.path.exists(ziptofile_hz):os.mkdir(ziptofile_hz)
+
+
+
+#阿里云参数
+access_key_id = 'LTAI5tDCdQARDVh2XYMjJGLa'
+access_key_secret = 'znwuFhoqj6i9ojEwZWuPE4Hmp8anzs'
+appKey = 'gF3HRZAKLeo6uD84'
+
+class AccessToken:
+    @staticmethod
+    def _encode_text(text):
+        encoded_text = parse.quote_plus(text)
+        return encoded_text.replace('+', '%20').replace('*', '%2A').replace('%7E', '~')
+    @staticmethod
+    def _encode_dict(dic):
+        keys = dic.keys()
+        dic_sorted = [(key, dic[key]) for key in sorted(keys)]
+        encoded_text = parse.urlencode(dic_sorted)
+        return encoded_text.replace('+', '%20').replace('*', '%2A').replace('%7E', '~')
+    @staticmethod
+    def create_token(access_key_id, access_key_secret):
+        parameters = {'AccessKeyId': access_key_id,
+                      'Action': 'CreateToken',
+                      'Format': 'JSON',
+                      'RegionId': 'cn-shanghai',
+                      'SignatureMethod': 'HMAC-SHA1',
+                      'SignatureNonce': str(uuid.uuid1()),
+                      'SignatureVersion': '1.0',
+                      'Timestamp': time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                      'Version': '2019-02-28'}
+        # 构造规范化的请求字符串
+        query_string = AccessToken._encode_dict(parameters)
+        #print('规范化的请求字符串: %s' % query_string)
+        # 构造待签名字符串
+        string_to_sign = 'GET' + '&' + AccessToken._encode_text('/') + '&' + AccessToken._encode_text(query_string)
+        #print('待签名的字符串: %s' % string_to_sign)
+        # 计算签名
+        secreted_string = hmac.new(bytes(access_key_secret + '&', encoding='utf-8'),
+                                   bytes(string_to_sign, encoding='utf-8'),
+                                   hashlib.sha1).digest()
+        signature = base64.b64encode(secreted_string)
+        #print('签名: %s' % signature)
+        # 进行URL编码
+        signature = AccessToken._encode_text(signature)
+        #print('URL编码后的签名: %s' % signature)
+        # 调用服务
+        full_url = 'http://nls-meta.cn-shanghai.aliyuncs.com/?Signature=%s&%s' % (signature, query_string)
+        # print('url: %s' % full_url)
+        # 提交HTTP GET请求
+        response = requests.get(full_url)
+        if response.ok:
+            root_obj = response.json()
+            key = 'Token'
+            if key in root_obj:
+                token = root_obj[key]['Id']
+                expire_time = root_obj[key]['ExpireTime']
+                return token, expire_time
+        #print(response.text)
+        return None, None
+
+token, expire_time = AccessToken.create_token(access_key_id, access_key_secret)
+url = 'https://nls-gateway-cn-shanghai.aliyuncs.com/stream/v1/asr'
+format = 'pcm'
+sampleRate = 16000
+enablePunctuationPrediction  = True
+enableInverseTextNormalization = True
+enableVoiceDetection  = False
+
+request = url + '?appkey=' + appKey
+request = request + '&format=' + format
+request = request + '&sample_rate=' + str(sampleRate)
+
+if enablePunctuationPrediction :
+    request = request + '&enable_punctuation_prediction=' + 'true'
+
+if enableInverseTextNormalization :
+    request = request + '&enable_inverse_text_normalization=' + 'true'
+
+if enableVoiceDetection :
+    request = request + '&enable_voice_detection=' + 'true'
+
+
+
+
+
+
+def remove_file(*path,type=all):
+    '''函数作用就是删除不同指定路径下指定格式的文件
+        type 必须是.mp3区分文件夹跟文件
+        path必须是末尾返斜杠
+    '''
+    for i in range(0,len( path),1):
+        
+        if type=='all':
+            newpath=path[i]+'*'
+            for file in glob.glob(newpath):
+                os.remove(file)
+        else :
+            newpath=path[i]
+            for f in os.listdir(newpath):
+                if  f.endswith(type):
+                    os.remove(newpath+f)
+
+def downfenbianlv(downloadfile,url):
+
+    try:
+        os.system("you-get -o "+downloadfile+"  --format=dash-flv360 "+url)
+    except:
+        print('没有360分辨率的')
+
+    try:
+        os.system("you-get -o "+downloadfile+" --format=dash-flv720 "+url)
+    except:
+        print('没有720分辨率的')
+
+    
+    os.system("you-get -o "+downloadfile+"  "+url)
+
+def single():
+
+    datam=dataurl
+    namelist=[]
+    urllist=[]
+    silencelist=[]
+    threshlist=[]
+    for i in range(0,len(datam),1):
+        if datam.loc[i,0][0:4]!='http':
+            name=datam.loc[i,0].split()
+            print(name)
+            namelist.append(name[0])
+            urllist.append(i)
+            if len(name)>1:
+                silencelist.append(name[1])
+                threshlist.append(name[2])
+            else:
+                silencelist.append(default_silence)
+                threshlist.append(default_thresh)
+    return namelist,urllist,silencelist,threshlist
+    
+    
+
+def download(downurl):
+
+    downurl.reset_index(drop=True,inplace=True)
+    thread_list = []
+    thread_num = 8
+    for i in range(0,len(downurl)):
+        #为每个新URL创建下载线程
+        url = downurl.loc[i,0]
+    
+        t = threading.Thread(target=downfenbianlv, args=(rootpath,url))
+        thread_list.append(t)
+        t.start()
+
+        #当线程池满时，等待线程结束
+        while len(thread_list)>thread_num:  
+            #移除已结束线程
+            thread_list = [x for x in thread_list if x.is_alive()]
+            time.sleep(3)
+
+
+
+
+def trans_format(newformat):
+
+ # 格式转换  mp4转换成mp3 mp3转换成pcm
+
+          
+    #批量转换格式转换为mp3并删除mp4
+    if newformat=='.mp3':
+        for i in os.listdir(rootpath):
+            if  os.path.splitext(i)[-1]=='.mp4':
+                trans_name=rootpath+i
+                save_name=rootpath+os.path.splitext(i)[0]+'.mp3'
+                code='start ffmpeg -y -i ' +trans_name+' -f mp3 '+save_name
+                os.system(code)
+                #subprocess.check_output(code,shell=True)
+    
+
+def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thresh=default_thresh):
+    
+#定义分解转换，方便后面多线程调用，阿里云单独两个线程
+
+    
+    sound = AudioSegment.from_file(audiopath, format='mp3')
+    chunks = split_on_silence(sound,min_silence_len,silence_thresh,keep_silence=800)#min_silence_len: 拆分语句时，静默满0.3秒则拆分。silence_thresh：小于-70dBFS以下的为静默。
+    if not os.path.exists(chunks_path):os.mkdir(chunks_path)
+    print(len(chunks))
+    for i in range(len(chunks)):
+        new = chunks[i]
+        save_name = chunks_path+audioname+'%04d.%s'%(i,'mp3')
+        new.export(save_name, format='mp3')
+        mp3name=save_name.split("\\")[-1]
+        pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
+        code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
+        os.system(code)
+        #subprocess.check_output(code,shell=True)
+
+
+ 
+
+
+
+def rename_test(audiofile):
+
+#将test2下mp3进行重命名，命名成数字，避免中文出现问题
+
+
+
+    onum=0
+    upnum=100
+    for i in os.listdir(audiofile):
+    #将mp3进行重命名，命名成数字，避免中文出现问题
+       if  os.path.splitext(i)[-1]=='.mp4':
+            print(i)
+        
+            onum+=1
+            onewname=audiofile+str(upnum)+'.mp4'
+        
+            os.rename(audiofile+i,onewname)
+            upnum+=1
+    return onum
+
+def process(request, token, audioFile) :
+
+#阿里云第一段代码
+
+
+    # 读取音频文件
+    with open(audioFile, mode = 'rb') as f:
+        audioContent = f.read()
+
+    host = 'nls-gateway-cn-shanghai.aliyuncs.com'
+
+    # 设置HTTPS请求头部
+    httpHeaders = {
+        'X-NLS-Token': token,
+        'Content-type': 'application/octet-stream',
+        'Content-Length': len(audioContent)
+        }
+
+
+    # Python 2.x使用httplib
+    # conn = httplib.HTTPConnection(host)
+
+    # Python 3.x使用http.client
+    conn = http.client.HTTPConnection(host)
+    conn.request(method='POST', url=request, body=audioContent, headers=httpHeaders)
+    response = conn.getresponse()
+    # print('Response status and response reason:')
+    # print(response.status ,response.reason)
+    body = response.read()
+    try:
+        # print('Recognize response is:')
+        body = json.loads(body)
+        # print(body)
+
+        status = body['status']
+        if status == 20000000 :
+            result = body['result']
+#           # print('Recognize result: ' + result)
+            return result
+        else :
+            print('Recognizer failed!')
+
+    except ValueError:
+        print('The response is not json format string')
+
+    conn.close()
+
+
+
+def part_aliyun(start,end,all_name):
+
+#传递一部分到阿里云 start从1开始
+
+    
+    for i in range(start,end,1):
+        aliyun_wav=wavpath+all_name[i]
+
+        result= process(request, token, aliyun_wav)
+
+        dic ={'编号':num,'语音内容':result}
+        data1=pd.DataFrame(dic,index=[0])
+        data2=data2.append(data1,ignore_index=True)
+
+    
+        
+
+def rename_mp3(data2):
+    
+#重新命名
+
+    rename_file=chunkspath
+
+    datadup=data2[data2.duplicated('语音内容',keep='False')]
+    datadup.sort_values(by=['语音内容'],inplace=True)
+    #重复值进行排序
+    datadup['排序']=1
+    dupnum=1
+    for i in range(1,len(datadup),1):
+        while datadup.loc[i,'语音内容']==datadup.loc[i-1,'语音内容']:
+            dupnum+=1
+            datadup.loc[i,'排序']=dupnum
+        datadup.loc[i,'排序']=dupnum
+    datadup['排序']=datadup['排序'].astype(str)
+    datadup['重复值']=datadup['语音内容']+datadup['排序']
+    datadup=datadup.drop(['语音内容','排序'],axis=1)
+    #data3重复数据重新命名
+    dataleft= pd.merge(left=data2,right=datadup,on='编号',how='left')   
+    for i in  range(0,len(dataleft),1):
+        if dataleft.loc[i,'重复值'].notnull():
+            dataleft.loc[i,'语音内容']=dataleft.loc[i,'重复值']+'_duplicates'
+    data2=dataleft.drop(['重复值'],axis=1)
+
+    data3=data2.groupby(data2['编号'])['语音内容'].apply(lambda x:x.str.cat(sep=''))
+    no_logo=['*',':','\'','<','>','|','\\','/','?']
+
+    for i in no_logo:
+        data3 =data3.apply(lambda x:x.replace( i,''))
+        data3=data3.apply(lambda x:x[:80] if len(x)>81 else x)
+    data3=data3.dropna(axis=0,how='any')
+    data3.drop(data3[data3.values==''].index,inplace=True)
+    #  data3.drop_duplicates(keep='first',inplace=True)
+    for i in os.listdir(rename_file):
+        for j in data3.index:
+            jstr=str(j)
+            jj=jstr.zfill(6)
+
+            if os.path.splitext(i)[0]==jj:
+                old_file=rename_file+i
+               #好兄弟加后缀的话放在这里，下面带#的代码就是例子，比这来
+      #        new_file=rename_file+data3[j]+'（素材分享群：123593137，获取更多素材）.mp3'
+                new_file=rename_file+data3[j]+'.mp3'
+                os.rename(old_file,new_file)
+
+    data2['编号']=data2['编号'].astype(str)
+
+    for i in os.listdir(rename_file):
+        for j in data2['编号']:
+            jstr=str(j)
+            jj=jstr.zfill(6)
+            if os.path.exists(rename_file+jj+'.mp3'):
+                os.remove(rename_file+jj+'.mp3')
+def houzhui():
+
+  # 增加一个后缀版本
+ 
+    for i in os.listdir(chunkspath):
+        oldname=chunkspath+i
+        newi=os.path.splitext(i)[0]
+        newname=chunkspath+newi+hzcontent
+        os.rename(oldname,newname)
+                
+
+
+def zipDir(source_dir, output_filename):
+    """
+    压缩指定文件夹
+    :param source_dir: 目标文件夹路径
+    :param output_filename: 压缩文件保存路径+xxxx.zip
+    :return: 无
+    """
+    if os.path.exists(source_dir):
+        # compression压缩比例，默认是不压缩，ZIP_LZMA=14级别的压缩，影响的是时间，但是包能更小
+        # vue使用级别=9的，var archive = archiver('zip', {zlib: {level: 9}});
+        # mac install: brew install xz
+        # mode 解压是 r , 压缩是 w 追加压缩是 a
+        # compression 为  zipfile.ZIP_DEFLATED，zipfile.ZIP_STORED， zipfile.ZIP_LZMA
+        zipf = zipfile.ZipFile(file=output_filename, mode='w', compression=zipfile.ZIP_LZMA)
+        # zipf = zipfile.ZipFile(file=output_filename, mode='w', compression=zipfile.ZIP_DEFLATED)
+        pre_len = len(os.path.dirname(source_dir))
+        for parent, dirnames, filenames in os.walk(source_dir):
+            for filename in filenames:
+                pathfile = os.path.join(parent, filename)
+                arcname = pathfile[pre_len:].strip(os.path.sep)  # 相对路径
+                zipf.write(pathfile, arcname)
+        zipf.close()
+        return output_filename
+    return
+
+def movefile(name):
+
+#复制到指定位置，然后解决重名问题要是重名了 改名
+
+
+    num=1
+
+    for j in os.listdir(rootpath):
+        if j.endswith('_hz.zip'):
+            ziphzname=os.path.splitext(j)[0]
+        if j.endswith('语音包新版本.zip'):
+            zipname=os.path.splitext(j)[0]
+      #用后缀版本解决重命名     
+    for i in os.listdir(ziptofile):
+        
+        while os.path.splitext(i)[0]==zipname:
+            if num>1:
+                
+                zipname=zipname.split('_')[0]+'_'+str(num)
+            else:
+                num+=1
+                
+                zipname=zipname+'_'+str(num)
+
+    for i in os.listdir(ziptofile_hz):
+        while os.path.splitext(i)[0]==ziphzname:
+            if num>1:
+                
+                ziphzname=ziphzname.split('_')[0]+'_hz_'+str(num)
+            else:
+                num+=1
+                
+                ziphzname=ziphzname+'_'+str(num)
+    
+    shutil.copy(rootpath+name+'语音包新版本.zip',ziptofile+zipname+'.zip')
+    shutil.copy(rootpath+name+'语音包新版本_hz.zip',ziptofile_hz+ziphzname+'.zip')
+ 
+
+
+def execute_one(name='请命名',silence=default_silence,thresh=default_thresh):
+
+ # 执行单个人物的执行代码
+
+    remove_file(rootpath,type='.zip')
+    remove_file(chunkspath,wavpath,type='all')
+
+    onum=rename_test(rootpath)
+    trans_format('.mp3')
+    
+    remove_file(rootpath,type='.cmt.xml')
+    remove_file(rootpath,type='.mp4')
+
+    thread_list = []
+    thread_num = 8
+    for i in range(100,100+onum,1):
+        audioname=str(i)
+        audiopath=rootpath+audioname+'.mp3'
+        t = threading.Thread(target=split_trans, args=(audiopath,audioname,silence,thresh))
+        print('多线程切分')
+        thread_list.append(t)
+        t.start()
+
+        while len(thread_list)>thread_num:  
+            #移除已结束线程
+            thread_list = [x for x in thread_list if x.is_alive()]
+            time.sleep(3)
+
+    #获取转wav下所有文件构造列表，进行多线程
+    all_name=[]
+    for i in os.listdir(wavpath):
+        all_name.append(i)
+    trans_num=len(all_name)
+    #两个线程上传阿里云
+    threads=[ threading.Thread(target=part_aliyun, args=(0,int(trans_num/2),all_name)),
+              threading.Thread(target=part_aliyun, args=(int(trans_num/2),trans_num,all_name))]
+    for t in threads:
+        t.start()
+
+    now_time=datetime.now().strftime('%Y%m%d%H%M%S')
+    log_file=rootpath+"日志\\"+now_time+'.txt'
+    data2.to_csv(log_file,index=False,sep=' ')
+    rename_mp3(data2)
+    #if判断，如果是，则用传进来的名字命名，如果不是请命名
+    zipDir(chunkspath,rootpath+name+'语音包新版本.zip')
+    houzhui()
+    zipDir(chunkspath,rootpath+name+'语音包新版本_hz.zip')
+    movefile(name)
+ 
+
+
+if __name__ == "__main__":
+    timetotal1=datetime.now()
+
+     #下载完成之后清空桌面下载链接,重新做已经存在，跑新的就不为空
+    #调整，多人物怎么调整
+    if os.path.getsize(txtpath)>1:
+
+        dataurl=pd.read_csv(txtpath,header=None,sep='\n')
+        print('正在下载链接中语音')
+        remove_file(rootpath,type='.mp3')
+        namelist,urllist,silencelist,threshlist=single()
+        urlnum=len(dataurl)
+        if len(namelist)==1:
+            downurl=dataurl[1:urlnum]
+            download(downurl)
+            execute_one(namelist[0])
+        elif len(namelist)==0 :
+            download(dataurl)
+            execute_one()
+        elif len(namelist)>1:
+            for i in range(0,len(namelist)-1,1):
+                downurl=dataurl[urllist[i]+1:urllist[i+1]]
+                download(downurl)
+                execute_one(namelist[i],silencelist[i],threshlist[i])
+            downurl=dataurl[urllist[-1]+1:]
+            download(downurl)
+            execute_one(namelist[len(namelist)-1],silencelist[len(namelist)-1],threshlist[len(namelist)-1])
+    else:           
+        print('跳过下载，直接使用test2里面mp3')
+        execute_one()
+
+
+ 
+
+    file= open(txtpath,'w').close()
+    timetotal2=datetime.now()
+    time_total=timetotal2-timetotal1
+    print('代码运行总时间',time_total)
+
+
+
+
+
+   
+   
+
+ 
+
+
+
