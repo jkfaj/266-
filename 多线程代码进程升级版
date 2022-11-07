@@ -539,13 +539,14 @@ if __name__ == "__main__":
 
         dataurl=pd.read_csv(txtpath,header=None,sep='\n')
         print('正在下载链接中语音')
-        remove_file(rootpath,type='.mp3')
+        remove_file(to_split_path,type='all')
         namelist,urllist,silencelist,threshlist=single()
         data_new_url=dataframe_trans(namelist,urllist,dataurl)
         data_new_url=data_new_url.reset_index(drop=True)
         data_new_url.sort('人物名字',inplace=True)
         data_new_url['文件名']=data_new_url['人物名字']+'_'+str(data_new_url.index)
-        
+        #data_new_url['silence']
+        #data_new_url['thresh']
         data_new_url
         file_make(namelist)
         
@@ -574,7 +575,7 @@ if __name__ == "__main__":
 
         do_name=[]
       # 判断条件 如果有一个结束了，那么久直接运行 do_name代表已经跑完的
-        while  len(do_name)=<len(data_new_url):
+        while  len(do_name)<=len(data_new_url):
             for i in os.listdir(to_split_path):
                 done_name =os.path.splitext(i)[0] 
                 if i.endswith('.mp4') and done_name not in do_name:  
