@@ -19,6 +19,7 @@ import numpy as np
 import subprocess
 import zipfile
 import shutil
+import multiprocessing
 
 '''多人多链接
    将压缩包移动到指定文件夹，如果之前文件夹有重名，处理方式
@@ -221,19 +222,18 @@ def file_make(namelist):
             if not os.path.exists(chunks_file):os.mkdir(chunks_file)
             if not os.path.exists(pcm_file):os.mkdir(pcm_file)
 
-def trans_format(newformuat):
+def trans_format(i):
 
  # 格式转换  mp4转换成mp3 mp3转换成pcm
 
           
     #批量转换格式转换为mp3并删除mp4
-    if newformat=='.mp3':
-        for i in os.listdir(rootpath):
-            if  os.path.splitext(i)[-1]=='.mp4':
-                trans_name=rootpath+i
-                save_name=rootpath+os.path.splitext(i)[0]+'.mp3'
-                code='start ffmpeg -y -i ' +trans_name+' -f mp3 '+save_name
-                os.system(code)
+    
+    trans_name=to_split_path+i
+    save_name=to_split_path+os.path.splitext(i)[0]+'.mp3'
+    code='start ffmpeg -y -i ' +trans_name+' -f mp3 '+save_name
+    os.system(code)
+    return save_name
                 #subprocess.check_output(code,shell=True)
     
 
@@ -245,15 +245,15 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
     sound = AudioSegment.from_file(audiopath, format='mp3')
     chunks = split_on_silence(sound,min_silence_len,silence_thresh,keep_silence=800)#min_silence_len: 拆分语句时，静默满0.3秒则拆分。silence_thresh：小于-70dBFS以下的为静默。
     if not os.path.exists(chunks_path):os.mkdir(chunks_path)
-    print(len(chunks))
+    # print(len(chunks))
     for i in range(len(chunks)):
         new = chunks[i]
-        save_name = chunks_path+audioname+'%04d.%s'%(i,'mp3')
+        save_name = chunkspath+audioname.split('_')[0]+'\\'+'audioname'+'%06d.%s'%(i,'mp3')
         new.export(save_name, format='mp3')
-        mp3name=save_name.split("\\")[-1]
-        pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
-        code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
-        os.system(code)
+        #mp3name=save_name.split("\\")[-1]
+        #pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
+       # code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
+        #os.system(code)
         #subprocess.check_output(code,shell=True)
 
 
@@ -544,7 +544,7 @@ if __name__ == "__main__":
         data_new_url=dataframe_trans(namelist,urllist,dataurl)
         data_new_url=data_new_url.reset_index(drop=True)
         data_new_url.sort('人物名字',inplace=True)
-        data_new_url['文件名']=data_new_url['人物名字']+'_'+str(data_new_url.index+100)
+        data_new_url['文件名']=data_new_url['人物名字']+'_'+str(data_new_url.index)
         
         data_new_url
         file_make(namelist)
@@ -572,11 +572,20 @@ if __name__ == "__main__":
 
 
 
-
+        do_name=[]
       # 判断条件 如果有一个结束了，那么久直接运行 do_name代表已经跑完的
-        
-
-
+        while  len(do_name)=<len(data_new_url):
+            for i in os.listdir(to_split_path):
+                done_name =os.path.splitext(i)[0] 
+                if i.endswith('.mp4') and done_name not in do_name:  
+                     
+                    do_name.append(done_name)
+                    #多进程
+                    save_name=trans_format(i)
+                    p = multiprocessing.Process(target=split_trans,args=(save_name,done_name))
+                    p.start()
+            if len(do_name)==len(data_new_url):
+                break
         
 
 
