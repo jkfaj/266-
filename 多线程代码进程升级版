@@ -206,9 +206,23 @@ def download(downurl):
             #移除已结束线程
             thread_list = [x for x in thread_list if x.is_alive()]
             time.sleep(3)
+def dataframe_trans(namelist,urllist,dataurl):
+#构建新的dataframe  格式的转换
+    data_new_url=pd.DataFrame(data=None,columns=['人物名字','url链接'])
+    for i in range(0,len(namelist),1):
+         if i==(len(namelist)-1):
+             data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:]})
+             
+             data_new_url=pd.concat([data_new_url,data_url])
+             
+         else:
+             
+             data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:urllist[i+1]]})
+             
+             data_new_url=pd.concat([data_new_url,data_url])
 
 
-
+    return data_new_url
 
 def trans_format(newformat):
 
@@ -529,17 +543,9 @@ if __name__ == "__main__":
         print('正在下载链接中语音')
         remove_file(rootpath,type='.mp3')
         namelist,urllist,silencelist,threshlist=single()
-        data_new_url=pd.DataFrame(data=None,columns=['人物名字','url链接'])
-        for i in range(0,len(namelist),1):
-             if i==(len(namelist)-1):
-                 data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:]})
-             
-                 data_new_url=pd.concat([data_new_url,data_url])
-             
-             else:
-                 data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:urllist[i+1]]})
-             
-                 data_new_url=pd.concat([data_new_url,data_url])
+        data_new_url=dataframe_trans(namelist,urllist,dataurl)
+        data_new_url
+        
 
 
 
