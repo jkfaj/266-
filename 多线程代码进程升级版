@@ -529,6 +529,24 @@ if __name__ == "__main__":
         print('正在下载链接中语音')
         remove_file(rootpath,type='.mp3')
         namelist,urllist,silencelist,threshlist=single()
+        data_new_url=pd.DataFrame(data=None,columns=['人物名字','url链接'])
+        for i in range(0,len(namelist),1):
+             if i==(len(namelist)-1):
+                 data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:]})
+             
+                 data_new_url=pd.concat([data_new_url,data_url])
+             
+             else:
+                 data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:urllist[i+1]]})
+             
+                 data_new_url=pd.concat([data_new_url,data_url])
+
+
+
+
+
+
+
         urlnum=len(dataurl)
         if len(namelist)==1:
             downurl=dataurl[1:urlnum]
