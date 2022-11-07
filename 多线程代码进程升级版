@@ -203,8 +203,9 @@ def dataframe_trans(namelist,urllist,dataurl):
              
          else:
              
-             data_url=pd.DataFrame({'人物名字':namelist[i],'url链接':dataurl[urllist[i]:urllist[i+1]]})
+             data_url=dataurl[urllist[i]:]
              
+             data_url['人物名字']=namelist[i]
              data_new_url=pd.concat([data_new_url,data_url])
 
 
