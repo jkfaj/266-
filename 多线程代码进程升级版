@@ -574,39 +574,15 @@ if __name__ == "__main__":
 
 
       # 判断条件 如果有一个结束了，那么久直接运行 do_name代表已经跑完的
-        download_name=[]
-        while len
-     
+        
 
 
-
-
-
-
-        urlnum=len(dataurl)
-        if len(namelist)==1:
-            downurl=dataurl[1:urlnum]
-            download(downurl)
-            execute_one(namelist[0])
-        elif len(namelist)==0 :
-            download(dataurl)
-            execute_one()
-        elif len(namelist)>1:
-            for i in range(0,len(namelist)-1,1):
-                downurl=dataurl[urllist[i]+1:urllist[i+1]]
-                download(downurl)
-                execute_one(namelist[i],silencelist[i],threshlist[i])
-            downurl=dataurl[urllist[-1]+1:]
-            download(downurl)
-            execute_one(namelist[len(namelist)-1],silencelist[len(namelist)-1],threshlist[len(namelist)-1])
-    else:           
-        print('跳过下载，直接使用test2里面mp3')
-        execute_one()
+        
 
 
  
 
-    file= open(txtpath,'w').close()
+    #file= open(txtpath,'w').close()
     timetotal2=datetime.now()
     time_total=timetotal2-timetotal1
     print('代码运行总时间',time_total)
