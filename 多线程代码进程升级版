@@ -545,7 +545,7 @@ if __name__ == "__main__":
         namelist,urllist,silencelist,threshlist=single()
         data_new_url=dataframe_trans(namelist,urllist,dataurl)
         data_new_url=data_new_url.reset_index(drop=True)
-        data_new_url.sort('人物名字',inplace=True)
+        data_new_url.sort_values('人物名字',ascending=True,inplace=True)
         data_new_url['文件名']=data_new_url['人物名字']+'_'+str(data_new_url.index)
         #data_new_url['silence']
         #data_new_url['thresh']
