@@ -36,6 +36,8 @@ hzcontent='（素材分享群：123593137，获取更多素材）.mp3'
        
 
 rootpath='C:\\Users\\Administrator\\Desktop\\test2\\'
+to_split_path=rootpath+'to_split_audio\\'
+if not os.path.exists(to_split_path):os.mkdir(to_split_path)
 chunkspath=rootpath+'chunks\\'
 wavpath=rootpath+'转wav\\'
 logpath=rootpath+'日志\\'
@@ -45,8 +47,6 @@ data2=pd.DataFrame(data=None,columns=['编号','语音内容'])
 
 ziptofile='E:\\test2\\新版语音包纯净版本\\'
 ziptofile_hz='E:\\test2\\新版语音包带后缀版本\\'
-if not os.path.exists(ziptofile):os.mkdir(ziptofile)
-if not os.path.exists(ziptofile_hz):os.mkdir(ziptofile_hz)
 
 
 
@@ -188,24 +188,8 @@ def single():
     
     
 
-def download(downurl):
 
-    downurl.reset_index(drop=True,inplace=True)
-    thread_list = []
-    thread_num = 8
-    for i in range(0,len(downurl)):
-        #为每个新URL创建下载线程
-        url = downurl.loc[i,0]
-    
-        t = threading.Thread(target=downfenbianlv, args=(rootpath,url))
-        thread_list.append(t)
-        t.start()
 
-        #当线程池满时，等待线程结束
-        while len(thread_list)>thread_num:  
-            #移除已结束线程
-            thread_list = [x for x in thread_list if x.is_alive()]
-            time.sleep(3)
 def dataframe_trans(namelist,urllist,dataurl):
 #构建新的dataframe  格式的转换
     data_new_url=pd.DataFrame(data=None,columns=['人物名字','url链接'])
@@ -223,6 +207,19 @@ def dataframe_trans(namelist,urllist,dataurl):
 
 
     return data_new_url
+
+
+def file_make(namelist):
+#创建文件夹 chunks  to_split_audio 转wav
+    if len(namelist)>0:
+        for i in namelist:
+            to_split_file=to_split_path+i+'\\'   
+            chunks_file=chunkspath+i+'\\'
+            pcm_file=wavpath+i+'\\'
+            
+            if not os.path.exists(to_split_file):os.mkdir(to_split_file)
+            if not os.path.exists(chunks_file):os.mkdir(chunks_file)
+            if not os.path.exists(pcm_file):os.mkdir(pcm_file)
 
 def trans_format(newformat):
 
@@ -538,6 +535,7 @@ if __name__ == "__main__":
      #下载完成之后清空桌面下载链接,重新做已经存在，跑新的就不为空
     #调整，多人物怎么调整
     if os.path.getsize(txtpath)>1:
+        #下载txt上面链接
 
         dataurl=pd.read_csv(txtpath,header=None,sep='\n')
         print('正在下载链接中语音')
@@ -545,8 +543,34 @@ if __name__ == "__main__":
         namelist,urllist,silencelist,threshlist=single()
         data_new_url=dataframe_trans(namelist,urllist,dataurl)
         data_new_url
-        
 
+
+        file_make(namelist)
+        
+        do_name=[]
+
+        for i in range(0,len(data_new_url),1):
+            downloadfile=to_split_path+data_new_url.loc[i,'人物名字']+'\\'
+            url=data_new_url.loc[i,'url链接']
+            
+            thread_list=[]
+            thread_num = 8
+            t = threading.Thread(target=downfenbianlv, args=(downloadfile,url))
+            thread_list.append(t)
+            t.start()
+            do_name.append(data_new_url.loc[i,'人物名字'])
+
+            #当线程池满时，等待线程结束
+            while len(thread_list)>thread_num:  
+            #移除已结束线程
+                thread_list = [x for x in thread_list if x.is_alive()]
+                time.sleep(3)
+
+
+      # 判断条件 如果有一个结束了，那么久直接运行 do_name代表已经跑完的
+        
+        while len
+     
 
 
 
