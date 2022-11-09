@@ -151,20 +151,20 @@ def remove_file(*path,type=all):
                 if  f.endswith(type):
                     os.remove(newpath+f)
 
-def downfenbianlv(downloadfile,url,name):
+def downfenbianlv(downloadfile,name,url):
 
     try:
-        os.system("you-get -o "+downloadfile+"  --format=dash-flv360 "+url + '-O name')
+        os.system("you-get -o  "+downloadfile+ ' -O '+ name+ "  --format=dash-flv360 "+url )
     except:
         print('没有360分辨率的')
 
     try:
-        os.system("you-get -o "+downloadfile+" --format=dash-flv720 "+url + '-O name')
+        os.system("you-get -o "+downloadfile+ ' -O '+ name+ " --format=dash-flv720 "+url )
     except:
         print('没有720分辨率的')
 
     
-    os.system("you-get -o "+downloadfile+"  "+url + '-O name')
+    os.system("you-get -o "+downloadfile+ ' -O '+ name+ "  "+url )
 
 def single():
 
@@ -555,12 +555,15 @@ if __name__ == "__main__":
 
 
        #开启线程池
-       urlpool = ThreadPoolExecutor(max_workers=8)
+       url_pool = ThreadPoolExecutor(max_workers=8)
        for i in range(0,len(data_new_url),1):
-           downloadfile=to_split_path
            url=data_new_url.loc[i,'url链接']
            name=data_new_url.loc[i,'文件名']+'.mp4'
-           pool.submit(downfenbianlv,name,url)
+           url_pool.submit(downfenbianlv,to_split_path,name,url)
+
+
+       #切分开启进程池
+       split_pool = multiprocessing.Pool(processes = 11)
    
 
 
