@@ -547,10 +547,26 @@ if __name__ == "__main__":
         data_new_url=data_new_url.reset_index(drop=True)
         data_new_url.sort_values('人物名字',ascending=True,inplace=True)
         data_new_url['文件名']=data_new_url['人物名字']+'_'+str(data_new_url.index)
+        #data_new_url需要再处理有问题
         #data_new_url['silence']
         #data_new_url['thresh']
         data_new_url
         file_make(namelist)
+
+
+       #开启线程池
+       urlpool = ThreadPoolExecutor(max_workers=8)
+       for i in range(0,len(data_new_url),1):
+           downloadfile=to_split_path
+           url=data_new_url.loc[i,'url链接']
+           name=data_new_url.loc[i,'文件名']+'.mp4'
+           pool.submit(downfenbianlv,name,url)
+   
+
+
+
+      #关掉线程池，关掉进程池
+      urlpool.shutdown()
         
         
 
