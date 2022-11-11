@@ -274,11 +274,11 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
     
     sound = AudioSegment.from_file(audiopath, format='mp3')
     chunks = split_on_silence(sound,min_silence_len,silence_thresh,keep_silence=800)#min_silence_len: 拆分语句时，静默满0.3秒则拆分。silence_thresh：小于-70dBFS以下的为静默。
-    if not os.path.exists(chunks_path):os.mkdir(chunks_path)
+    #if not os.path.exists(chunks_path):os.mkdir(chunks_path)
     # print(len(chunks))
     for i in range(len(chunks)):
         new = chunks[i]
-        save_name = chunkspath+audioname.split('_')[0]+'\\'+'audioname'+'%06d.%s'%(i,'mp3')
+        save_name = chunkspath+audioname.split('_')[0]+'\\'+audioname+'%06d.%s'%(i,'mp3')
         new.export(save_name, format='mp3')
         mp3name=save_name.split("\\")[-1]
         pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
@@ -600,6 +600,8 @@ if __name__ == "__main__":
        for i in os.listdir(to_split_path):
            to_split=to_split_path+i
            to_name=os.path.splitext(i)[0]
+           silence=data_new_url[data_new_url['文件名']==to_name]
+           thresh=
 
            split_pool.submit(split_trans,to_split,to_name)
    
