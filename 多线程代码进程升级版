@@ -20,6 +20,10 @@ import subprocess
 import zipfile
 import shutil
 import multiprocessing
+import requests
+import re
+import json
+from lxml import etree
 
 '''多人多链接
    将压缩包移动到指定文件夹，如果之前文件夹有重名，处理方式
@@ -48,6 +52,11 @@ data2=pd.DataFrame(data=None,columns=['编号','语音内容'])
 
 ziptofile='E:\\test2\\新版语音包纯净版本\\'
 ziptofile_hz='E:\\test2\\新版语音包带后缀版本\\'
+
+headers = {
+    'Referer': 'https://www.bilibili.com/',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36'
+}
 
 
 
@@ -151,20 +160,39 @@ def remove_file(*path,type=all):
                 if  f.endswith(type):
                     os.remove(newpath+f)
 
-def downfenbianlv(downloadfile,name,url):
 
-    try:
-        os.system("you-get -o  "+downloadfile+ ' -O '+ name+ "  --format=dash-flv360 "+url )
-    except:
-        print('没有360分辨率的')
-
-    try:
-        os.system("you-get -o "+downloadfile+ ' -O '+ name+ " --format=dash-flv720 "+url )
-    except:
-        print('没有720分辨率的')
 
     
-    os.system("you-get -o "+downloadfile+ ' -O '+ name+ "  "+url )
+   # os.system("you-get -o "+downloadfile+ ' -O '+ name+ "  "+url )
+
+
+
+# 获取有分p的所有视频的音频
+def get_all_url(start_url):
+    video_code = start_url.split('/')[4][:12] #提取B站视频的编号
+    res = requests.get(url=start_url, headers=headers).text
+    pattern_ = '<script>window.__INITIAL_STATE__=(.*?);\(function' # 提取分p视频列表信息的json数据
+    n_ = re.findall(pattern_, res, re.S)
+    xx_json = json.loads(n_[0])
+    names = xx_json['videoData']['pages']# 提取分p视频的所有标题
+    return names, video_code
+
+# 获取没有分p视频的音频文件
+def get_mp3(url_,title):
+    response = requests.get(url_, headers).text
+    tree = etree.HTML(response)
+    pattern = '<script>window\.__playinfo__=(.*?)</script>' #提取音频url
+    list_ = re.findall(pattern, response, re.S)
+    list_json = json.loads(list_[0])
+    #title = tree.xpath('//*[@id="viewbox_report"]/h1/span/text()')[0] # 获取标题
+    volume_url = list_json['data']['dash']['audio'][0]['baseUrl']
+    print(volume_url)
+    PATH = to_split_path + title + '.mp3'#保存路径
+    audio = requests.get(url=volume_url, headers=headers).content
+    with open(PATH, 'wb') as f:
+        f.write(audio)
+    print('下载完成')
+
 
 def single():
 
@@ -252,11 +280,11 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
         new = chunks[i]
         save_name = chunkspath+audioname.split('_')[0]+'\\'+'audioname'+'%06d.%s'%(i,'mp3')
         new.export(save_name, format='mp3')
-        #mp3name=save_name.split("\\")[-1]
-        #pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
-       # code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
-        #os.system(code)
-        #subprocess.check_output(code,shell=True)
+        mp3name=save_name.split("\\")[-1]
+        pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
+        code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
+        os.system(code)
+        subprocess.check_output(code,shell=True)
 
 
  
@@ -555,15 +583,25 @@ if __name__ == "__main__":
 
 
        #开启线程池
-       url_pool = ThreadPoolExecutor(max_workers=8)
+       url_pool = ThreadPoolExecutor(max_workers=10)
+       datetime1=datetime.now()
        for i in range(0,len(data_new_url),1):
            url=data_new_url.loc[i,'url链接']
-           name=data_new_url.loc[i,'文件名']+'.mp4'
-           url_pool.submit(downfenbianlv,to_split_path,name,url)
+           name=data_new_url.loc[i,'文件名']
+           
+           url_pool.submit(get_mp3,url,name)
 
+       url_pool.shutdown()
+       datetime2=datetime.now()
+       print('下载花费时间：',datetime2-datetime1)
 
        #切分开启进程池
        split_pool = multiprocessing.Pool(processes = 11)
+       for i in os.listdir(to_split_path):
+           to_split=to_split_path+i
+           to_name=os.path.splitext(i)[0]
+
+           split_pool.submit(split_trans,to_split,to_name)
    
 
 
