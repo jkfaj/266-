@@ -252,21 +252,6 @@ def file_make(namelist):
             if not os.path.exists(chunks_file):os.mkdir(chunks_file)
             if not os.path.exists(pcm_file):os.mkdir(pcm_file)
 
-def trans_format(i):
-
- # 格式转换  mp4转换成mp3 mp3转换成pcm
-
-          
-    #批量转换格式转换为mp3并删除mp4
-    
-    trans_name=to_split_path+i
-    save_name=to_split_path+os.path.splitext(i)[0]+'.mp3'
-    code='start ffmpeg -y -i ' +trans_name+' -f mp3 '+save_name
-    os.system(code)
-    return save_name
-                #subprocess.check_output(code,shell=True)
-
-
 
 
 
@@ -310,25 +295,7 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
 
 
 
-def rename_test(audiofile):
 
-#将test2下mp3进行重命名，命名成数字，避免中文出现问题
-
-
-
-    onum=0
-    upnum=100
-    for i in os.listdir(audiofile):
-    #将mp3进行重命名，命名成数字，避免中文出现问题
-       if  os.path.splitext(i)[-1]=='.mp4':
-            print(i)
-        
-            onum+=1
-            onewname=audiofile+str(upnum)+'.mp4'
-        
-            os.rename(audiofile+i,onewname)
-            upnum+=1
-    return onum
 
 def process(request, token, audioFile) :
 
@@ -461,7 +428,7 @@ def houzhui(name):
                 
 
 
-def zipDir(name):
+def zipDir(name,output_file):
     """
     压缩指定文件夹
     :param source_dir: 目标文件夹路径
@@ -469,7 +436,7 @@ def zipDir(name):
     :return: 无
     """
     source_dir=chunkspath+name+'\\'
-    output_file=chunkspath+name+'zip'
+    #output_file=chunkspath+name+'zip'
     if os.path.exists(source_dir):
         # compression压缩比例，默认是不压缩，ZIP_LZMA=14级别的压缩，影响的是时间，但是包能更小
         # vue使用级别=9的，var archive = archiver('zip', {zlib: {level: 9}});
@@ -495,7 +462,7 @@ def movefile(name):
 
     num=1
 
-    for j in os.listdir(rootpath):
+    for j in os.listdir(chunkspath):
         if j.endswith('_hz.zip'):
             ziphzname=os.path.splitext(j)[0]
         if j.endswith('语音包新版本.zip'):
@@ -522,14 +489,16 @@ def movefile(name):
                 
                 ziphzname=ziphzname+'_'+str(num)
     
-    shutil.copy(rootpath+name+'语音包新版本.zip',ziptofile+zipname+'.zip')
-    shutil.copy(rootpath+name+'语音包新版本_hz.zip',ziptofile_hz+ziphzname+'.zip')
+    shutil.copy(chunkspath+name+'语音包新版本.zip',ziptofile+zipname+'.zip')
+    shutil.copy(chunkspath+name+'语音包新版本_hz.zip',ziptofile_hz+ziphzname+'.zip')
  
 
 def re_zip_m(name):
     rename_mp3(name)
-    zipDir(name)
-    movefile(name)
+    zipDir(name,chunkspath+name+'语音包新版本.zip')
+    houzhui()
+    zipDir(name,chunkspath+name+'语音包新版本_hz.zip')
+   # movefile(name)
     
 
 
@@ -663,46 +632,16 @@ if __name__ == "__main__":
         #改名，压缩，移动
         re_zip_pool=multiprocessing.Pool(processes = 11)
         for i in os.listdir(chunkspath):
-            rename_mp3(i)
-            re_zip_pool.submit()
+            print(i)
+            
+            re_zip_pool.submit(re_zip_m,i)
+        re_zip_pool.shutdown()
+
+        move_file()
 
     
 
-        for i in range(0,len(data_new_url),1):
-            downloadfile=to_split_path
-            url=data_new_url.loc[i,'url链接']
-            file_name=data_new_url.loc[i,'文件名']
-            name=file_name+'.mp4'
-            
-            thread_list=[]
-            thread_num = 8
-            t = threading.Thread(target=downfenbianlv, args=(downloadfile,url,name))
-            thread_list.append(t)
-            t.start()
-            
-
-            #当线程池满时，等待线程结束
-            while len(thread_list)>thread_num:  
-            #移除已结束线程
-                thread_list = [x for x in thread_list if x.is_alive()]
-                time.sleep(3)
-
-
-
-        do_name=[]
-      # 判断条件 如果有一个结束了，那么久直接运行 do_name代表已经跑完的
-        while  len(do_name)<=len(data_new_url):
-            for i in os.listdir(to_split_path):
-                done_name =os.path.splitext(i)[0] 
-                if i.endswith('.mp4') and done_name not in do_name:  
-                     
-                    do_name.append(done_name)
-                    #多进程
-                    save_name=trans_format(i)
-                    p = multiprocessing.Process(target=split_trans,args=(save_name,done_name))
-                    p.start()
-            if len(do_name)==len(data_new_url):
-                break
+        
         
 
 
