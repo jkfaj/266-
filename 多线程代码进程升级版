@@ -622,7 +622,6 @@ if __name__ == "__main__":
         
 
 
- 
 
     #file= open(txtpath,'w').close()
     timetotal2=datetime.now()
