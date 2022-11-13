@@ -605,7 +605,7 @@ if __name__ == "__main__":
             print(silence)
             print(thresh)
 
-            split_pool.apply_async(split_trans,to_split,to_name,silence,thresh)
+            split_pool.apply_async(split_trans,args=(to_split,to_name,silence,thresh))
    
 
 
