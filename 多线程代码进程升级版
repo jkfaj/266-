@@ -392,12 +392,12 @@ def part_aliyun(aliyun_wav):
     
         
 
-def rename_mp3(name,data_total):
+def rename_mp3(name):
     
 #重新命名
     rename_file=chunkspath+name+'\\'
 
-    data2=data_total
+    data2=data[data_total['编号'].str.contains(name)]
 
     datadup=data2[data2.duplicated('语音内容',keep='False')]
     datadup.sort_values(by=['语音内容'],inplace=True)
@@ -431,7 +431,7 @@ def rename_mp3(name,data_total):
     for i in os.listdir(rename_file):
         for j in data3.index:
             jstr=str(j)
-            jj=jstr.zfill(6)
+            #jj=jstr.zfill(6)
 
             if os.path.splitext(i)[0]==jj:
                 old_file=rename_file+i
@@ -445,28 +445,31 @@ def rename_mp3(name,data_total):
     for i in os.listdir(rename_file):
         for j in data2['编号']:
             jstr=str(j)
-            jj=jstr.zfill(6)
+            # jj=jstr.zfill(6)
             if os.path.exists(rename_file+jj+'.mp3'):
                 os.remove(rename_file+jj+'.mp3')
-def houzhui():
+def houzhui(name):
 
   # 增加一个后缀版本
+    file_path=chunkspath+'\\'+name+'\\'
  
-    for i in os.listdir(chunkspath):
-        oldname=chunkspath+i
+    for i in os.listdir(file_path):
+        oldname=file_path+i
         newi=os.path.splitext(i)[0]
-        newname=chunkspath+newi+hzcontent
+        newname=file_path+newi+hzcontent
         os.rename(oldname,newname)
                 
 
 
-def zipDir(source_dir, output_filename):
+def zipDir(name):
     """
     压缩指定文件夹
     :param source_dir: 目标文件夹路径
     :param output_filename: 压缩文件保存路径+xxxx.zip
     :return: 无
     """
+    source_dir=chunkspath+name+'\\'
+    output_file=chunkspath+name+'zip'
     if os.path.exists(source_dir):
         # compression压缩比例，默认是不压缩，ZIP_LZMA=14级别的压缩，影响的是时间，但是包能更小
         # vue使用级别=9的，var archive = archiver('zip', {zlib: {level: 9}});
@@ -523,6 +526,12 @@ def movefile(name):
     shutil.copy(rootpath+name+'语音包新版本_hz.zip',ziptofile_hz+ziphzname+'.zip')
  
 
+def re_zip_m(name):
+    rename_mp3(name)
+    zipDir(name)
+    movefile(name)
+    
+
 
 def execute_one(name='请命名',silence=default_silence,thresh=default_thresh):
 
@@ -568,9 +577,9 @@ def execute_one(name='请命名',silence=default_silence,thresh=default_thresh):
     data2.to_csv(log_file,index=False,sep=' ')
     rename_mp3(data2)
     #if判断，如果是，则用传进来的名字命名，如果不是请命名
-    zipDir(chunkspath,rootpath+name+'语音包新版本.zip')
+    zipDir(chunkspath,chunkspath+name+'语音包新版本.zip')
     houzhui()
-    zipDir(chunkspath,rootpath+name+'语音包新版本_hz.zip')
+    zipDir(chunkspath,chunkspath+name+'语音包新版本_hz.zip')
     movefile(name)
  
 
@@ -647,8 +656,15 @@ if __name__ == "__main__":
                 trans_path=wavpath+i+'\\'+j
                 ali_pool.submit(part_aliyun,trans_path)
         ali_pool.submit()
+        now_time=datetime.now().strftime('%Y%m%d%H%M%S')
+        log_file=rootpath+"日志\\"+now_time+'.txt'
+        data_total.to_csv(log_file,index=False,sep=' ')
 
         #改名，压缩，移动
+        re_zip_pool=multiprocessing.Pool(processes = 11)
+        for i in os.listdir(chunkspath):
+            rename_mp3(i)
+            re_zip_pool.submit()
 
     
 
