@@ -506,50 +506,7 @@ def execute_one(name='请命名',silence=default_silence,thresh=default_thresh):
 
  # 执行单个人物的执行代码
 
-    remove_file(rootpath,type='.zip')
-    remove_file(chunkspath,wavpath,type='all')
-
-    onum=rename_test(rootpath)
-    trans_format('.mp3')
-    
-    remove_file(rootpath,type='.cmt.xml')
-    remove_file(rootpath,type='.mp4')
-
-    thread_list = []
-    thread_num = 8
-    for i in range(100,100+onum,1):
-        audioname=str(i)
-        audiopath=rootpath+audioname+'.mp3'
-        t = threading.Thread(target=split_trans, args=(audiopath,audioname,silence,thresh))
-        print('多线程切分')
-        thread_list.append(t)
-        t.start()
-
-        while len(thread_list)>thread_num:  
-            #移除已结束线程
-            thread_list = [x for x in thread_list if x.is_alive()]
-            time.sleep(3)
-
-    #获取转wav下所有文件构造列表，进行多线程
-    all_name=[]
-    for i in os.listdir(wavpath):
-        all_name.append(i)
-    trans_num=len(all_name)
-    #两个线程上传阿里云
-    threads=[ threading.Thread(target=part_aliyun, args=(0,int(trans_num/2),all_name)),
-              threading.Thread(target=part_aliyun, args=(int(trans_num/2),trans_num,all_name))]
-    for t in threads:
-        t.start()
-
-    now_time=datetime.now().strftime('%Y%m%d%H%M%S')
-    log_file=rootpath+"日志\\"+now_time+'.txt'
-    data2.to_csv(log_file,index=False,sep=' ')
-    rename_mp3(data2)
-    #if判断，如果是，则用传进来的名字命名，如果不是请命名
-    zipDir(chunkspath,chunkspath+name+'语音包新版本.zip')
-    houzhui()
-    zipDir(chunkspath,chunkspath+name+'语音包新版本_hz.zip')
-    movefile(name)
+    pass
  
 
 
@@ -558,6 +515,8 @@ if __name__ == "__main__":
 
      #下载完成之后清空桌面下载链接,重新做已经存在，跑新的就不为空
     #调整，多人物怎么调整
+    shutil.rmtree(chunkspath)
+    shutil.rmtree(wavpath)
     if os.path.getsize(txtpath)>1:
         #下载txt上面链接
 
