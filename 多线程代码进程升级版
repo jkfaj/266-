@@ -564,7 +564,7 @@ if __name__ == "__main__":
         dataurl=pd.read_csv(txtpath,header=None,sep='\n')
         print('正在下载链接中语音')
         dataurl
-      #  remove_file(to_split_path,type='all')
+        remove_file(to_split_path,type='all')
         namelist,urllist,silencelist,threshlist=single()
         data_new_url=dataframe_trans(namelist,urllist,dataurl)
         data_new_url=data_new_url.reset_index(drop=True)
