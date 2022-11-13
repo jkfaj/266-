@@ -613,8 +613,10 @@ if __name__ == "__main__":
 
 
       #关掉线程池，关掉进程池
-      urlpool.shutdown()
-        
+         urlpool.shutdown()
+      #格式转换多进程，批量做
+        trans_pool=multiprocessing.Pool(processes = 11)
+
         
 
         for i in range(0,len(data_new_url),1):
