@@ -502,11 +502,58 @@ def re_zip_m(name):
     
 
 
-def execute_one(name='请命名',silence=default_silence,thresh=default_thresh):
+def execute_one(name):
 
- # 执行单个人物的执行代码
+ # 不走链接的代码
+    if not os.path.exists(chunkspath+'to_rename'):os.mkdir(chunkspath+'to_rename')
+    if not os.path.exists(wavpath+'to_rename'):os.mkdir(wavpath+'to_rename')
 
-    pass
+
+      #切分开启进程池
+    split_pool = multiprocessing.Pool(processes = 11)
+    for i in os.path.listdir(to_split_path):
+        to_split=to_split_path+i
+        to_trans_name=os.path.splitext(i)[0]
+        to_name=data_new_url.loc[data_new_url['文件名']==to_trans_name,'人物名字']
+        #silence=silencelist[namelist.index(to_name)]
+        #thresh=threshlist[namelist.index(to_name)]
+        split_pool.submit(split_trans,to_split,to_name,silence,thresh)
+   
+
+
+
+      #关掉线程池，关掉进程池
+    split_pool.shutdown()
+      #格式转换多进程，批量做
+    trans_pool=multiprocessing.Pool(processes = 11)
+    for i in os.listdir(chunkspath):
+        for j in os.listdir(chunkspath+i+'\\'):
+            trans_path=chunkspath+i+'\\'+j
+            trans_pool.submit(to_pcm,trans_path,i)
+
+    trans_pool.shutdown()
+
+      #阿里云多线程
+       
+    ali_pool = ThreadPoolExecutor(max_workers=2)
+    for i in os.listdir(wavpath):
+        for j in os.listdir(wavpath+i+'\\'):
+            trans_path=wavpath+i+'\\'+j
+            ali_pool.submit(part_aliyun,trans_path)
+    ali_pool.submit()
+    now_time=datetime.now().strftime('%Y%m%d%H%M%S')
+    log_file=rootpath+"日志\\"+now_time+'.txt'
+    data_total.to_csv(log_file,index=False,sep=' ')
+
+        #改名，压缩，移动
+    re_zip_pool=multiprocessing.Pool(processes = 11)
+    for i in os.listdir(chunkspath):
+        print(i)
+            
+        re_zip_pool.submit(re_zip_m,i)
+    re_zip_pool.shutdown()
+
+    move_file()
  
 
 
@@ -566,7 +613,7 @@ if __name__ == "__main__":
 
 
       #关掉线程池，关掉进程池
-        urlpool.shutdown()
+        split_pool.shutdown()
       #格式转换多进程，批量做
         trans_pool=multiprocessing.Pool(processes = 11)
         for i in os.listdir(chunkspath):
@@ -597,6 +644,8 @@ if __name__ == "__main__":
         re_zip_pool.shutdown()
 
         move_file()
+    else:
+
 
     
 
