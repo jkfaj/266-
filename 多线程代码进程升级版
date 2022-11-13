@@ -225,7 +225,7 @@ def dataframe_trans(namelist,urllist,dataurl):
     data_new_url=pd.DataFrame(data=None,columns=['人物名字','url链接'])
     for i in range(0,len(namelist),1):
          if i==(len(namelist)-1):
-             data_url=dataurl[urllist[i]:]
+             data_url=dataurl[urllist[i]+1:]
              data_url.rename(columns={0:'url链接'},inplace=True)
              
              data_url.loc[:,'人物名字']=namelist[i]
@@ -233,7 +233,7 @@ def dataframe_trans(namelist,urllist,dataurl):
              
          else:
              
-             data_url=dataurl[urllist[i]:urllist[i+1]]
+             data_url=dataurl[urllist[i]+1:urllist[i+1]]
              data_url.rename(columns={0:'url链接'},inplace=True)
              
              data_url.loc[:,'人物名字']=namelist[i]
