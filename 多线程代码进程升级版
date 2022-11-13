@@ -48,7 +48,7 @@ wavpath=rootpath+'转wav\\'
 logpath=rootpath+'日志\\'
 txtpath='C:\\Users\\Administrator\\Desktop\\下载链接.txt'
 
-data2=pd.DataFrame(data=None,columns=['编号','语音内容'])
+data_total=pd.DataFrame(data=None,columns=['编号','语音内容'])
 
 ziptofile='E:\\test2\\新版语音包纯净版本\\'
 ziptofile_hz='E:\\test2\\新版语音包带后缀版本\\'
@@ -387,16 +387,17 @@ def part_aliyun(aliyun_wav):
 
     dic ={'编号':num,'语音内容':result}
     data1=pd.DataFrame(dic,index=[0])
-    data2=data2.append(data1,ignore_index=True)
+    data_total=data_total.append(data1,ignore_index=True)
 
     
         
 
-def rename_mp3(data2):
+def rename_mp3(name,data_total):
     
 #重新命名
+    rename_file=chunkspath+name+'\\'
 
-    rename_file=chunkspath
+    data2=data_total
 
     datadup=data2[data2.duplicated('语音内容',keep='False')]
     datadup.sort_values(by=['语音内容'],inplace=True)
@@ -612,7 +613,7 @@ if __name__ == "__main__":
 
        #切分开启进程池
        split_pool = multiprocessing.Pool(processes = 11)
-       for i in os.listdir(to_split_path):
+       for i in os.path.listdir(to_split_path):
            to_split=to_split_path+i
            to_trans_name=os.path.splitext(i)[0]
            to_name=data_new_url.loc[data_new_url['文件名']==to_trans_name,'人物名字']
@@ -645,6 +646,9 @@ if __name__ == "__main__":
             for j in os.listdir(wavpath+i+'\\'):
                 trans_path=wavpath+i+'\\'+j
                 ali_pool.submit(part_aliyun,trans_path)
+        ali_pool.submit()
+
+        #改名，压缩，移动
 
     
 
