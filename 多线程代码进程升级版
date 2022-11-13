@@ -515,7 +515,9 @@ def execute_one():
             trans_path=chunkspath+i+'\\'+j
             trans_pool.submit(to_pcm,trans_path,i)
 
-    trans_pool.shutdown()
+    
+    trans_pool.close()
+    trans_pool.join()
 
       #阿里云多线程
        
@@ -528,6 +530,7 @@ def execute_one():
     now_time=datetime.now().strftime('%Y%m%d%H%M%S')
     log_file=rootpath+"日志\\"+now_time+'.txt'
     data_total.to_csv(log_file,index=False,sep=' ')
+    ali_pool.shutdown()
 
         #改名，压缩，移动
     re_zip_pool=multiprocessing.Pool(processes = 11)
@@ -535,7 +538,9 @@ def execute_one():
         print(i)
             
         re_zip_pool.submit(re_zip_m,i)
-    re_zip_pool.shutdown()
+    re_zip_pool.close()
+    re_zip_pool.join()
+    
 
  
 
@@ -556,7 +561,7 @@ if __name__ == "__main__":
 
         dataurl=pd.read_csv(txtpath,header=None,sep='\n')
         print('正在下载链接中语音')
-        remove_file(to_split_path,type='all')
+      #  remove_file(to_split_path,type='all')
         namelist,urllist,silencelist,threshlist=single()
         data_new_url=dataframe_trans(namelist,urllist,dataurl)
         data_new_url=data_new_url.reset_index(drop=True)
@@ -600,7 +605,8 @@ if __name__ == "__main__":
 
 
       #关掉线程池，关掉进程池
-        split_pool.shutdown()
+        split_pool.close()
+        split_pool.join()
         execute_one()
     else:
         if not os.path.exists(chunkspath+'to_rename'):os.mkdir(chunkspath+'to_rename')
@@ -615,7 +621,8 @@ if __name__ == "__main__":
             print(to_name)
        
             split_pool.submit(split_trans,to_split,to_name)
-        split_pool.shutdown()
+        split_pool.close()
+        split_pool.join()
         execute_one()
    
 
