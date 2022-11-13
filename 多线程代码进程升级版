@@ -282,7 +282,7 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
     sound = AudioSegment.from_file(audiopath, format='mp3')
     chunks = split_on_silence(sound,min_silence_len,silence_thresh,keep_silence=800)#min_silence_len: 拆分语句时，静默满0.3秒则拆分。silence_thresh：小于-70dBFS以下的为静默。
     #if not os.path.exists(chunks_path):os.mkdir(chunks_path)
-    # print(len(chunks))
+    print(len(chunks))
     for i in range(len(chunks)):
         new = chunks[i]
         save_name = chunkspath+audioname+'\\'+audioname+'%06d.%s'%(i,'mp3')
@@ -355,6 +355,7 @@ def part_aliyun(aliyun_wav):
     result= process(request, token, aliyun_wav)
 
     dic ={'编号':num,'语音内容':result}
+    print(num,result)
     data1=pd.DataFrame(dic,index=[0])
     data_total=data_total.append(data1,ignore_index=True)
 
@@ -515,7 +516,7 @@ def execute_one():
     for i in os.listdir(chunkspath):
         for j in os.listdir(chunkspath+i+'\\'):
             trans_path=chunkspath+i+'\\'+j
-            trans_pool.submit(to_pcm,trans_path,i)
+            trans_pool.apply_async(to_pcm,trans_path,i)
 
     
     trans_pool.close()
@@ -528,18 +529,18 @@ def execute_one():
         for j in os.listdir(wavpath+i+'\\'):
             trans_path=wavpath+i+'\\'+j
             ali_pool.submit(part_aliyun,trans_path)
-    ali_pool.submit()
+    ali_pool.shutdown()
     now_time=datetime.now().strftime('%Y%m%d%H%M%S')
     log_file=rootpath+"日志\\"+now_time+'.txt'
     data_total.to_csv(log_file,index=False,sep=' ')
-    ali_pool.shutdown()
+    
 
         #改名，压缩，移动
     re_zip_pool=multiprocessing.Pool(processes = 11)
     for i in os.listdir(chunkspath):
         print(i)
             
-        re_zip_pool.submit(re_zip_m,i)
+        re_zip_pool.apply_async(re_zip_m,i)
     re_zip_pool.close()
     re_zip_pool.join()
     
@@ -604,7 +605,7 @@ if __name__ == "__main__":
             print(silence)
             print(thresh)
 
-            split_pool.submit(split_trans,to_split,to_name,silence,thresh)
+            split_pool.apply_async(split_trans,to_split,to_name,silence,thresh)
    
 
 
@@ -625,7 +626,7 @@ if __name__ == "__main__":
 
             print(to_name)
        
-            split_pool.submit(split_trans,to_split,to_name)
+            split_pool.apply_async(split_trans,to_split,to_name)
         split_pool.close()
         split_pool.join()
         execute_one()
