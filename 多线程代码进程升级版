@@ -267,8 +267,24 @@ def trans_format(i):
                 #subprocess.check_output(code,shell=True)
 
 
-def to_pcm(path,count):
-#将文件夹下平均分成多少份，然后运行多线程    
+
+
+
+
+
+
+def to_pcm(path,file):
+#将文件夹下平均分成多少份，然后运行多线程   ,如果大于400条，多线程 
+    mp3name=path.split("\\")[-1]
+    pcm_name=wavpath+file+'\\'+os.path.splitext(mp3name)[0]+'.pcm'
+    print(pcm_name)
+    code=' ffmpeg -y -i ' +path+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
+    os.system(code)
+
+
+
+
+
 
 def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thresh=default_thresh):
     
@@ -283,11 +299,11 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
         new = chunks[i]
         save_name = chunkspath+audioname.split('_')[0]+'\\'+audioname+'%06d.%s'%(i,'mp3')
         new.export(save_name, format='mp3')
-        mp3name=save_name.split("\\")[-1]
-        pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
-        code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
-        os.system(code)
-        subprocess.check_output(code,shell=True)
+       # mp3name=save_name.split("\\")[-1]
+       # pcm_name=wavpath+os.path.splitext(mp3name)[0]+'.pcm'
+       # code='start ffmpeg -y -i ' +save_name+' -acodec pcm_s16le -f s16le -ac 1 -ar 16000 '+pcm_name
+       # os.system(code)
+        #subprocess.check_output(code,shell=True)
 
 
  
@@ -363,19 +379,15 @@ def process(request, token, audioFile) :
 
 
 
-def part_aliyun(start,end,all_name):
+def part_aliyun(aliyun_wav):
 
-#传递一部分到阿里云 start从1开始
+#批量上传到阿里云，2个线程
 
-    
-    for i in range(start,end,1):
-        aliyun_wav=wavpath+all_name[i]
+    result= process(request, token, aliyun_wav)
 
-        result= process(request, token, aliyun_wav)
-
-        dic ={'编号':num,'语音内容':result}
-        data1=pd.DataFrame(dic,index=[0])
-        data2=data2.append(data1,ignore_index=True)
+    dic ={'编号':num,'语音内容':result}
+    data1=pd.DataFrame(dic,index=[0])
+    data2=data2.append(data1,ignore_index=True)
 
     
         
@@ -610,17 +622,31 @@ if __name__ == "__main__":
            print(silence)
            print(thresh)
 
-           split_pool.submit(split_trans,to_split,to_name)
+           split_pool.submit(split_trans,to_split,to_name,silence,thresh)
    
 
 
 
       #关掉线程池，关掉进程池
-         urlpool.shutdown()
+        urlpool.shutdown()
       #格式转换多进程，批量做
         trans_pool=multiprocessing.Pool(processes = 11)
+        for i in os.listdir(chunkspath):
+            for j in os.listdir(chunkspath+i+'\\'):
+                trans_path=chunkspath+i+'\\'+j
+                trans_pool.submit(to_pcm,trans_path,i)
 
-        
+        trans_pool.shutdown()
+
+      #阿里云多线程
+       
+        ali_pool = ThreadPoolExecutor(max_workers=2)
+        for i in os.listdir(wavpath):
+            for j in os.listdir(wavpath+i+'\\'):
+                trans_path=wavpath+i+'\\'+j
+                ali_pool.submit(part_aliyun,trans_path)
+
+    
 
         for i in range(0,len(data_new_url),1):
             downloadfile=to_split_path
