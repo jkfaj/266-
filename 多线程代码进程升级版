@@ -265,7 +265,10 @@ def trans_format(i):
     os.system(code)
     return save_name
                 #subprocess.check_output(code,shell=True)
-    
+
+
+def to_pcm(path,count):
+#将文件夹下平均分成多少份，然后运行多线程    
 
 def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thresh=default_thresh):
     
