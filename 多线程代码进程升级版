@@ -545,7 +545,9 @@ if __name__ == "__main__":
      #下载完成之后清空桌面下载链接,重新做已经存在，跑新的就不为空
     #调整，多人物怎么调整
     shutil.rmtree(chunkspath)
+    if not os.path.exists(chunkspath):os.mkdir(chunkspath)
     shutil.rmtree(wavpath)
+    if not os.path.exists(wavpath):os.mkdir(wavpath)
     if os.path.getsize(txtpath)>1:
         #下载txt上面链接
 
