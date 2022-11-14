@@ -278,7 +278,7 @@ def split_trans(audiopath,audioname,min_silence_len=default_silence,silence_thre
     
 #定义分解转换，方便后面多线程调用，阿里云单独两个线程
 
-    
+    print('开始切分')
     sound = AudioSegment.from_file(audiopath, format='mp3')
     chunks = split_on_silence(sound,min_silence_len,silence_thresh,keep_silence=800)#min_silence_len: 拆分语句时，静默满0.3秒则拆分。silence_thresh：小于-70dBFS以下的为静默。
     #if not os.path.exists(chunks_path):os.mkdir(chunks_path)
