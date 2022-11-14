@@ -209,8 +209,8 @@ def single():
             namelist.append(name[0])
             urllist.append(i)
             if len(name)>1:
-                silencelist.append(name[1])
-                threshlist.append(name[2])
+                silencelist.append(int(name[1]))
+                threshlist.append(int(name[2]))
             else:
                 silencelist.append(default_silence)
                 threshlist.append(default_thresh)
@@ -516,6 +516,7 @@ def execute_one():
     for i in os.listdir(chunkspath):
         for j in os.listdir(chunkspath+i+'\\'):
             trans_path=chunkspath+i+'\\'+j
+            print('格式转换多线程开始')
             trans_pool.apply_async(to_pcm,trans_path,i)
 
     
@@ -528,6 +529,7 @@ def execute_one():
     for i in os.listdir(wavpath):
         for j in os.listdir(wavpath+i+'\\'):
             trans_path=wavpath+i+'\\'+j
+            print('阿里云多线程开启')
             ali_pool.submit(part_aliyun,trans_path)
     ali_pool.shutdown()
     now_time=datetime.now().strftime('%Y%m%d%H%M%S')
@@ -538,7 +540,8 @@ def execute_one():
         #改名，压缩，移动
     re_zip_pool=multiprocessing.Pool(processes = 11)
     for i in os.listdir(chunkspath):
-        print(i)
+        
+        print('改名压缩移动程序',i)
             
         re_zip_pool.apply_async(re_zip_m,i)
     re_zip_pool.close()
@@ -607,12 +610,13 @@ if __name__ == "__main__":
             silence=silencelist[namelist.index(to_name)]
             thresh=threshlist[namelist.index(to_name)]
             splits=(to_split,to_name,silence,thresh)
+            print(to_split)
 
             print(to_name)
 
             print(silence)
             print(thresh)
-
+        print('切分多线程开启')
         split_pool.map(split_trans,split_list)
    
 
