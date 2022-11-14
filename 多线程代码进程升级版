@@ -576,7 +576,11 @@ if __name__ == "__main__":
         #data_new_url需要再处理有问题
         #data_new_url['silence']
         #data_new_url['thresh']
-        data_new_url
+        print(data_new_url)
+        print(namelist)
+        print(silencelist)
+        print(threshlist)
+        print(urllist)
         file_make(namelist)
 
 
