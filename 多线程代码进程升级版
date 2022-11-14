@@ -595,17 +595,21 @@ if __name__ == "__main__":
 
        #切分开启进程池
         split_pool = multiprocessing.Pool(processes = 11)
+        split_list=[]
         for i in os.listdir(to_split_path):
             to_split=to_split_path+i
             to_trans_name=os.path.splitext(i)[0]
             to_name=data_new_url.loc[data_new_url['文件名']==to_trans_name,'人物名字'].iloc[0]
             silence=silencelist[namelist.index(to_name)]
             thresh=threshlist[namelist.index(to_name)]
+            splits=(to_split,to_name,silence,thresh)
+
             print(to_name)
+
             print(silence)
             print(thresh)
 
-            split_pool.apply_async(split_trans,args=(to_split,to_name,silence,thresh))
+        split_pool.map(split_trans,split_list)
    
 
 
