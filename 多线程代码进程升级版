@@ -187,7 +187,7 @@ def get_mp3(url_,title):
     list_json = json.loads(list_[0])
     #title = tree.xpath('//*[@id="viewbox_report"]/h1/span/text()')[0] # 获取标题
     volume_url = list_json['data']['dash']['audio'][0]['baseUrl']
-   # print(volume_url)
+    print(volume_url)
     PATH = to_split_path + title + '.mp3'#保存路径
     audio = requests.get(url=volume_url, headers=headers).content
     with open(PATH, 'w') as f:
