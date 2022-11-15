@@ -611,7 +611,7 @@ if __name__ == "__main__":
         # m4s_mp3()
 
        #切分开启进程池
-        split_pool = multiprocessing.Pool(processes = 11)
+        split_pool = multiprocessing.Pool(processes = 2)
         split_list=[]
         for i in os.listdir(to_split_path):
             to_split=to_split_path+i
