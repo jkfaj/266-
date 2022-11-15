@@ -188,7 +188,7 @@ def get_mp3(url_,title):
     #title = tree.xpath('//*[@id="viewbox_report"]/h1/span/text()')[0] # 获取标题
     volume_url = list_json['data']['dash']['audio'][0]['baseUrl']
    # print(volume_url)
-    PATH = to_split_path + title + '.m4s'#保存路径
+    PATH = to_split_path + title + '.mp3'#保存路径
     audio = requests.get(url=volume_url, headers=headers).content
     with open(PATH, 'w') as f:
         f.write(audio)
@@ -606,7 +606,7 @@ if __name__ == "__main__":
         url_pool.shutdown()
         datetime2=datetime.now()
         print('下载花费时间：',datetime2-datetime1)
-        m4s_mp3()
+        # m4s_mp3()
 
        #切分开启进程池
         split_pool = multiprocessing.Pool(processes = 11)
@@ -628,7 +628,7 @@ if __name__ == "__main__":
       #关掉线程池，关掉进程池
         split_pool.close()
         split_pool.join()
-        execute_one()
+        #execute_one()
     else:
         if not os.path.exists(chunkspath+'to_rename'):os.mkdir(chunkspath+'to_rename')
         if not os.path.exists(wavpath+'to_rename'):os.mkdir(wavpath+'to_rename')
