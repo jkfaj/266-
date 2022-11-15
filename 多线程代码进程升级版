@@ -620,7 +620,10 @@ if __name__ == "__main__":
             silence=silencelist[namelist.index(to_name)]
             thresh=threshlist[namelist.index(to_name)]
             splits=(to_split,to_name,silence,thresh)
-            print(split_list)
+            split_list.append(splits)
+            print(splits)
+        
+        print(split_list)
             
         print('切分多线程开启')
         split_pool.map(split_trans,split_list)
