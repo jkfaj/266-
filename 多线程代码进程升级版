@@ -56,9 +56,10 @@ ziptofile_hz='E:\\test2\\新版语音包带后缀版本\\'
 
 headers = {
     'Referer': 'https://www.bilibili.com/',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
 }
 
+# user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36
 
 
 #阿里云参数
@@ -595,17 +596,17 @@ if __name__ == "__main__":
 
 
        #开启线程池
-       # url_pool = ThreadPoolExecutor(max_workers=10)
-        #datetime1=datetime.now()
-        #for i in range(0,len(data_new_url),1):
-            #url=data_new_url.loc[i,'url链接']
-            #name=data_new_url.loc[i,'文件名']
+        url_pool = ThreadPoolExecutor(max_workers=10)
+        datetime1=datetime.now()
+        for i in range(0,len(data_new_url),1):
+            url=data_new_url.loc[i,'url链接']
+            name=data_new_url.loc[i,'文件名']
            
-            #url_pool.submit(get_mp3,url,name)
+            url_pool.submit(get_mp3,url,name)
 
-        #url_pool.shutdown()
-        #datetime2=datetime.now()
-        #print('下载花费时间：',datetime2-datetime1)
+        url_pool.shutdown()
+        datetime2=datetime.now()
+        print('下载花费时间：',datetime2-datetime1)
         # m4s_mp3()
 
        #切分开启进程池
@@ -628,7 +629,7 @@ if __name__ == "__main__":
       #关掉线程池，关掉进程池
         split_pool.close()
         split_pool.join()
-        execute_one()
+       # execute_one()
     else:
         if not os.path.exists(chunkspath+'to_rename'):os.mkdir(chunkspath+'to_rename')
         if not os.path.exists(wavpath+'to_rename'):os.mkdir(wavpath+'to_rename')
