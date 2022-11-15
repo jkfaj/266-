@@ -595,17 +595,17 @@ if __name__ == "__main__":
 
 
        #开启线程池
-        url_pool = ThreadPoolExecutor(max_workers=10)
-        datetime1=datetime.now()
-        for i in range(0,len(data_new_url),1):
-            url=data_new_url.loc[i,'url链接']
-            name=data_new_url.loc[i,'文件名']
+       # url_pool = ThreadPoolExecutor(max_workers=10)
+        #datetime1=datetime.now()
+        #for i in range(0,len(data_new_url),1):
+            #url=data_new_url.loc[i,'url链接']
+            #name=data_new_url.loc[i,'文件名']
            
-            url_pool.submit(get_mp3,url,name)
+            #url_pool.submit(get_mp3,url,name)
 
-        url_pool.shutdown()
-        datetime2=datetime.now()
-        print('下载花费时间：',datetime2-datetime1)
+        #url_pool.shutdown()
+        #datetime2=datetime.now()
+        #print('下载花费时间：',datetime2-datetime1)
         # m4s_mp3()
 
        #切分开启进程池
@@ -628,7 +628,7 @@ if __name__ == "__main__":
       #关掉线程池，关掉进程池
         split_pool.close()
         split_pool.join()
-        #execute_one()
+        execute_one()
     else:
         if not os.path.exists(chunkspath+'to_rename'):os.mkdir(chunkspath+'to_rename')
         if not os.path.exists(wavpath+'to_rename'):os.mkdir(wavpath+'to_rename')
